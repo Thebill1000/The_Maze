@@ -1,158 +1,153 @@
-#ifndef HEADER_H
-#define HEADER_H
+#ifndef Demo_h
+#define Demo_h
 
-#include <SDL2/SDL.h>
-#include <stdint.h>
-#include <math.h>
-#include <limits.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include "upng.h"
-
-
-/* Constants */
-
+#define SCREEN_WIDTH 1080
+#define SCREEN_HEIGHT 600
+#define gun_scale 0.35
+#define map_x 8
+#define map_y 8
+#define map_s 64
 #define PI 3.14159265
-#define TWO_PI 6.28318530
+#define PI2 (0.5 * PI)
+#define PI3 (1.5 * PI)
+#define DR 0.0174533
+#define MAP_SCALE 0.25
+#define num_enemy 5
+#define FOV (PI / 3)
+#define RAD_DEG 57.296
+#define num_rays 60
 
-#define TILE_SIZE 64
-
-#define MINIMAP_SCALE_FACTOR 0.25
-
-#define SCREEN_WIDTH (MAP_NUM_COLS * TILE_SIZE)
-#define SCREEN_HEIGHT (MAP_NUM_ROWS * TILE_SIZE)
-
-#define FOV_ANGLE (60 * (PI / 180))
-
-#define NUM_RAYS SCREEN_WIDTH
-
-#define PROJ_PLANE ((SCREEN_WIDTH / 2) / tan(FOV_ANGLE / 2))
-
-#define FPS 30
-#define FRAME_TIME_LENGTH (1000 / FPS)
-
-#define MAP_NUM_ROWS 13
-#define MAP_NUM_COLS 20
-
-#define NUM_TEXTURES 8
-
-typedef uint32_t color_t;
-
-/* Process Input */
-void handleInput(void);
-extern bool GameRunning;
-
-/* Functions-variables-structs for draw */
-
-bool initializeWindow(void);
-void destroyWindow(void);
-void clearColorBuffer(color_t color);
-void render_game(void);
-void renderColorBuffer(void);
-void drawPixel(int x, int y, color_t color);
-void drawRect(int x, int y, int width, int height, color_t color);
-void drawLine(int x0, int y0, int x1, int y1, color_t color);
-
-/* Functions-variables-structs for map */
-bool DetectCollision(float x, float y);
-bool isInsideMap(float x, float y);
-void renderMap(void);
-int getMapValue(int row, int col);
-
-/* Functions-variables-structs for player */
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <math.h>
+#include <time.h>
 
 /**
- * struct player_s - struct for the textures
- * @x: x coordinate
- * @y: y coordinate
- * @width: player width
- * @height: player height
- * @turnDirection: Turn Direction
- * @walkDirection: Walk Direction
- * @rotationAngle: player rotation angle
- * @walkSpeed: walk speed
- * @turnSpeed: turn speed
- */
+ * struct SDL_Instance - structure for sdl instance
+ * @win: window of sdl
+ * @ren: surface to draw
+ *
+ * Decscription: structure to create window and surface of SDL
+**/
+typedef struct SDL_Instance
+{
+	SDL_Window *win;
+	SDL_Renderer *ren;
+} SDL_Instance;
 
+/**
+ * struct btn_keys - structure for event keys
+ * @w: up key
+ * @a: down key
+ * @d: right key
+ * @a: left key
+ * @e: key for open door
+ * @x: key for exit
+ * @s: down key
+ *
+ * Description: structure for handling movement & rotation
+ **/
+typedef struct btn_keys
+{
+	int w, a, d, s, e, x;
+} btn_keys;
+
+/**
+ * struct player_s - struburte for the player
+ * @x: the x coordinate postion
+ * @y: the y coordinate position
+ * @w: the width of the player
+ * @h: the height of the player
+ * @a: angle of the player
+ * @dx: delta x of the player
+ * @dy: delta y of the player
+ **/
 typedef struct player_s
 {
-	float x;
-	float y;
-	float width;
-	float height;
-	int turnDirection;
-	int walkDirection;
-	float rotationAngle;
-	float walkSpeed;
-	float turnSpeed;
+	float x, y, w, h, a, dx, dy;
 } player_t;
 
 extern player_t player;
 
-void movePlayer(float DeltaTime);
-void renderPlayer(void);
-
-/* Functions-variables-structs for ray */
-
 /**
- * struct ray_s - struct for the textures
- * @rayAngle: ray angle
- * @wallHitX: wall hit x coordinate
- * @wallHitY: wall hit x coordinate
- * @distance: ditance to the wall
- * @wasHitVertical: verify hit vertical
- * @wallHitContent: wall hit content
- */
-
-typedef struct ray_s
+ * struct enemy_s - structure for the enemy
+ * @x: the x coordinate postion
+ * @y: the y coordinate position
+ * @z: the z coordinate
+ * @path: the given path of the image
+ **/
+typedef struct enemy_s
 {
-	float rayAngle;
-	float wallHitX;
-	float wallHitY;
-	float distance;
-	bool wasHitVertical;
-	int wallHitContent;
-} ray_t;
+	float x, y, z;
+	char *path;
+} enemy_t;
 
-extern ray_t rays[NUM_RAYS];
+extern enemy_t enemy;
+extern float buff[num_rays];
 
-float distanceBetweenPoints(float x1, float y1, float x2, float y2);
-bool isRayFacingUp(float angle);
-bool isRayFacingDown(float angle);
-bool isRayFacingLeft(float angle);
-bool isRayFacingRight(float angle);
-void castAllRays(void);
-void castRay(float rayAngle, int stripId);
-void renderRays(void);
-void horzIntersection(float rayAngle);
-void vertIntersection(float rayAngle);
+/** main.c **/
+void init_game(void);
+void display(SDL_Instance instance);
 
-/* Functions-variables-structs for textures */
+/** input **/
+int poll_events(SDL_Instance instance);
+void handle_key_down(SDL_Instance instance);
+void key_up(SDL_Event ev);
+void key_down(SDL_Event ev);
+void handle_door(void);
 
-/**
- * struct texture_s - struct for the textures
- * @width: texture width
- * @height: texture height
- * @texture_buffer: pointer to texture buffer
- * @upngTexture: pointer to upng buffer
- *
- */
+/** window **/
+int init_instance(SDL_Instance *in);
+float FixAng(float a);
 
-typedef struct texture_s
-{
-	int width;
-	int height;
-	color_t *texture_buffer;
-	upng_t *upngTexture;
-} texture_t;
+/** draw **/
+void display_player(SDL_Instance instance);
+void draw_map(SDL_Instance ins);
+void draw_scene(SDL_Instance ins, int n, float h, float ray_a, float shade,
+		float rx, float ry, int m_txr);
+void draw_floor(SDL_Instance ins, float ln_off, int n, float line, float ra);
+void draw_roof(SDL_Instance ins, float ln_off, int n, float line, float ra);
 
-texture_t wallTextures[NUM_TEXTURES];
+/** cast **/
+void ray_cast(SDL_Instance ins);
+int hit_wall(float rx, float ry);
+void horizontal_collision(float ray_a, float *d, float *hx, float *hy, int *h);
+void vertical_collision(float ray_a, float *vd, float *vx, float *vy, int *v);
+float find_distance(float ax, float ay, float bx, float by);
 
-void WallTexturesready(void);
-void freeWallTextures(void);
+/** draw2 **/
+void add_weapon(SDL_Instance ins);
+void add_enemy(SDL_Instance ins);
+float find_viewdistance(void);
+void draw_sprite_map(SDL_Instance ins);
+void sort_sprite(int *sprite, double *spr_dis, int n);
 
-/* Functions-variables-structs for walls */
+/** texture **/
+float get_texture(int idx);
 
-void renderWall(void);
+/** map **/
+void setmap_value(int mx, int my, int val);
+int getmap_value(int x, int y, int mp);
+void free_numbers(int **numbers);
+void make_map(char **argv);
 
-#endif /*HEADER_H*/
+/** get_map **/
+int _atoi(char *s);
+char *_strdup(char *str);
+int _length(char *str);
+int **get_altitude(char **argv);
+char **str_split(char *str, char *del);
+
+/** free_mem **/
+void free_grid(SDL_Point ***grid);
+void free_tokens(char **tokens);
+void free_cols(char ***cols);
+void free_numbers(int **numbers);
+#endif
